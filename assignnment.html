@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Assignments</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Assignments</h1>
+  <table id="namesTable" border="1"></table>
+
+  <script>
+    const API_URL = "https://names-backend-production.up.railway.app/names"; // update later
+
+    function buildTable(names) {
+      const table = document.getElementById("namesTable");
+      table.innerHTML = "";
+      names.forEach((name, idx) => {
+        const row = table.insertRow();
+        row.insertCell(0).innerText = idx + 1;
+        row.insertCell(1).innerText = name;
+      });
+    }
+
+    fetch(API_URL)
+      .then(res => res.text())
+      .then(text => {
+        const names = text.trim().split("\n").filter(Boolean);
+        buildTable(names);
+      });
+  </script>
+</body>
+</html>

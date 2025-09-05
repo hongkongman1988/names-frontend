@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Update Names</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Update Name List</h1>
+  <textarea id="nameInput" rows="10" cols="40" placeholder="Enter one name per line"></textarea>
+  <br>
+  <button onclick="saveList()">Save to Server</button>
+
+  <script>
+    const API_URL = "https://names-backend-production.up.railway.app/names"; // update later
+
+    function saveList() {
+      const text = document.getElementById('nameInput').value.trim();
+      if (!text) {
+        alert("Name list is empty!");
+        return;
+      }
+      fetch(API_URL, {
+        method: "POST",
+        headers: {"Content-Type": "text/plain"},
+        body: text
+      })
+      .then(res => res.text())
+      .then(msg => alert(msg))
+      .catch(err => console.error("Error:", err));
+    }
+  </script>
+</body>
+</html>
