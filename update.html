@@ -53,15 +53,18 @@
   <textarea id="namesInput"></textarea><br>
   <button id="loadBtn">Load Current</button>
   <button id="saveBtn">Save</button>
+  <!-- 👇 New button -->
+  <button onclick="window.location.href='index.html'" style="background:#6c757d;">
+    Back to Home
+  </button>
 
   <div id="status"></div>
 
   <script>
-    const API_URL = "https://names-backend-production.up.railway.app/names"; // replace if Railway URL differs
+    const API_URL = "https://names-backend-production.up.railway.app/names"; // replace if your Railway URL differs
     const namesInput = document.getElementById("namesInput");
     const statusDiv = document.getElementById("status");
 
-    // Load names from backend
     async function loadNames() {
       statusDiv.textContent = "Loading...";
       try {
@@ -76,7 +79,6 @@
       }
     }
 
-    // Save names to backend (overwrite)
     async function saveNames() {
       const body = namesInput.value.trim();
       if (body === "") {
@@ -102,7 +104,6 @@
     document.getElementById("loadBtn").addEventListener("click", loadNames);
     document.getElementById("saveBtn").addEventListener("click", saveNames);
 
-    // Load current data on page load
     window.addEventListener("DOMContentLoaded", loadNames);
   </script>
 </body>
