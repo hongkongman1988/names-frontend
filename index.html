@@ -2,12 +2,67 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Names Project</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Duty Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f9f9f9;
+      padding: 40px;
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    p {
+      color: #555;
+      margin-bottom: 30px;
+    }
+    .button-container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    a {
+      display: inline-block;
+      padding: 15px 25px;
+      font-size: 16px;
+      text-decoration: none;
+      color: white;
+      border-radius: 6px;
+      transition: background-color 0.2s;
+    }
+    .btn-update {
+      background-color: #28a745;
+    }
+    .btn-update:hover {
+      background-color: #1e7e34;
+    }
+    .btn-assignment {
+      background-color: #007bff;
+    }
+    .btn-assignment:hover {
+      background-color: #0056b3;
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 12px;
+      color: #888;
+    }
+  </style>
 </head>
 <body>
-  <h1>Names Project</h1>
-  <button onclick="location.href='update.html'">Update List</button>
-  <button onclick="location.href='assignment.html'">View Assignments</button>
+
+  <h1>Duty Manager</h1>
+  <p>Choose an action below:</p>
+
+  <div class="button-container">
+    <a href="update.html" class="btn-update">Update List</a>
+    <a href="assignment.html" class="btn-assignment">Duty Assignment</a>
+  </div>
+
+
 </body>
 </html>
