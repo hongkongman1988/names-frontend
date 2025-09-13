@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simplest Table (with API)</title>
+  <title>Simplest Table (with API + Zebra Striping)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -31,7 +31,8 @@
     .btn-unticked { background:#ffc107; color:black; }
     .btn-all { background:#6c757d; }
     .btn-clear { background:#dc3545; }
-    .btn-export { background:#17a2b8; }
+    .btn-home { background:#6c757d; }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -69,6 +70,13 @@
       text-align: right;
       font-size: 12px;
     }
+    /* Zebra stripes */
+    #itemsTable tbody tr:nth-child(odd) {
+      background-color: #ffffff;
+    }
+    #itemsTable tbody tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
     /* Row highlights */
     .pair1-highlight { background-color: #d6eaff !important; }
     .pair2-highlight { background-color: #d6ffd6 !important; }
@@ -87,7 +95,7 @@
     <button class="btn-unticked" onclick="filterUnticked()">Show Unticked</button>
     <button class="btn-all" onclick="showAll()">Show All</button>
     <button class="btn-clear" onclick="untickAll()">Untick All</button>
-    <button class="btn-export" onclick="exportTicked()">Export Ticked</button>
+    <button class="btn-home" onclick="window.location.href='index.html'">Back to Home</button>
   </div>
 
   <table id="itemsTable">
@@ -114,10 +122,9 @@
 
   <script>
     const headers = ["PO", "PA", "A", "N", "@", "#", "%", "2in1"];
-    const API_URL = "https://names-backend-production.up.railway.app/names"; // <--- your Railway backend
+    const API_URL = "https://names-backend-production.up.railway.app/names";
 
     window.addEventListener("DOMContentLoaded", () => {
-      // Load names from the backend API
       fetch(API_URL)
         .then(res => {
           if (!res.ok) throw new Error("API error");
@@ -169,7 +176,7 @@
           nameCell.textContent = name.trim();
           row.appendChild(nameCell);
 
-          // Other checkboxes
+          // Other headers
           headers.forEach(header => {
             const td = document.createElement("td");
             const checkbox = document.createElement("input");
@@ -183,7 +190,6 @@
           tableBody.appendChild(row);
         }
       });
-
       updateItemCount();
     }
 
@@ -250,70 +256,6 @@
         row.cells[3].classList.remove("ic-highlight", "second-highlight", "both-highlight");
       });
       showAll();
-    }
-
-    function exportTicked() {
-      const rows = Array.from(document.querySelectorAll("#itemsTable tbody tr"))
-        .filter(row => Array.from(row.querySelectorAll("input[type=checkbox]")).some(chk => chk.checked));
-      if (rows.length === 0) { alert("No ticked rows to export!"); return; }
-
-      const clonedRows = rows.map(row => {
-        const clone = row.cloneNode(true);
-        const origInputs = row.querySelectorAll("input[type=checkbox]");
-        const cloneInputs = clone.querySelectorAll("input[type=checkbox]");
-        origInputs.forEach((inp, i) => {
-          if (inp.checked) cloneInputs[i].setAttribute("checked", "checked");
-        });
-        return clone.outerHTML;
-      }).join("");
-
-      const tableHead = document.querySelector("#itemsTable thead").outerHTML;
-      const html = `
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Ticked Rows Export</title>
-<style>
-  table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 12px; }
-  th, td { border: 1px solid #666; padding: 4px; text-align: center; }
-  th { background: #007bff; color: white; }
-  input[type=checkbox] { width:14px; height:14px; }
-  .pair1-highlight { background-color: #d6eaff !important; }
-  .pair2-highlight { background-color: #d6ffd6 !important; }
-  .pair3-highlight { background-color: #ffe6e6 !important; }
-  .row-gray { background-color: #e0e0e0 !important; text-decoration: line-through; color: #555; }
-  .ic-highlight { background-color: #ff8c00 !important; color:white; }
-  .second-highlight { background-color: #ffd699 !important; }
-  .both-highlight { background-color: #ffb84d !important; }
-</style>
-</head>
-<body>
-<h2>Exported Ticked Rows</h2>
-<table>${tableHead}<tbody>${clonedRows}</tbody></table>
-<script>
-  document.querySelectorAll("tbody tr").forEach(row => {
-    const cb = row.cells[0].querySelector("input[type=checkbox]");
-    if (cb) {
-      cb.addEventListener("change", () => {
-        if (cb.checked) row.classList.add("row-gray");
-        else row.classList.remove("row-gray");
-      });
-      if (cb.checked) row.classList.add("row-gray");
-    }
-  });
-<\/script>
-</body>
-</html>`;
-      const blob = new Blob([html], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "ticked.html";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
     }
   </script>
 </body>
