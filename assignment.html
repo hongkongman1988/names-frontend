@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Duty assignment</title>
+  <title>Duty Assignment</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -20,8 +20,8 @@
     .controls button {
       flex: 1;
       min-width: 80px;
-      padding: 8px 10px;
-      font-size: 14px;
+      padding: 5px;
+      font-size: 11px;
       border: none;
       border-radius: 3px;
       color: white;
@@ -37,17 +37,18 @@
       width: 100%;
       border-collapse: collapse;
       background: #fff;
+      font-size: 12px;
       margin-top: 10px;
     }
     th, td {
       border: 1px solid #ccc;
-      padding: 8px;          /* larger padding */
+      padding: 3px;
       text-align: center;
-      font-size: 14px;       /* bigger font */
     }
     th {
       background: #007bff;
       color: white;
+      font-size: 12px;
       position: sticky;
       top: 0;
       z-index: 2;
@@ -59,16 +60,15 @@
     td.n-cell {
       border-right: 3px solid #000;
     }
-    /* Bigger checkboxes */
     input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
+      width: 14px;
+      height: 14px;
     }
     #itemCount {
       margin-top: 6px;
       font-weight: bold;
       text-align: right;
-      font-size: 13px;
+      font-size: 12px;
     }
     /* Zebra stripes */
     #itemsTable tbody tr:nth-child(odd) {
@@ -267,24 +267,6 @@
       });
       showAll();
     }
-
-    // 🚫 Block refresh (F5, Ctrl+R, Cmd+R)
-    document.addEventListener("keydown", function (event) {
-      if (event.key === "F5") {
-        event.preventDefault();
-        alert("Refresh is disabled on this page.");
-      }
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "r") {
-        event.preventDefault();
-        alert("Refresh is disabled on this page.");
-      }
-    });
-
-    // 🚫 Warn before closing or navigating away
-    window.addEventListener("beforeunload", function (e) {
-      e.preventDefault();
-      e.returnValue = ""; // Standard show confirm dialog
-    });
   </script>
 </body>
 </html>
