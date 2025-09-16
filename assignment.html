@@ -33,17 +33,6 @@
     .btn-clear { background:#dc3545; }
     .btn-home { background:#6c757d; }
 
-    #topBar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
-    }
-    #tickedCount {
-      font-weight: bold;
-      color: #007bff;
-    }
-
     table {
       width: 100%;
       border-collapse: collapse;
@@ -117,17 +106,13 @@
     <button class="btn-home" onclick="window.location.href='index.html'">Back to Home</button>
   </div>
 
-  <div id="topBar">
-    <div id="tickedCount">Ticked Staff: 0</div>
-  </div>
-
   <table id="itemsTable">
     <thead>
       <tr>
         <th>✓</th>
         <th>I/C</th>
         <th>2nd</th>
-        <th>Name</th>
+        <th>Name <span id="tickedCount">(0)</span></th>
         <th>PO</th>
         <th>PA</th>
         <th>A</th>
@@ -274,7 +259,7 @@
           .some(cb => cb.checked);
         if (anyTicked) count++;
       });
-      document.getElementById("tickedCount").textContent = "Ticked Staff: " + count;
+      document.getElementById("tickedCount").textContent = "(" + count + ")";
     }
 
     function updateRowUnderline(row) {
