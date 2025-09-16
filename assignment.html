@@ -77,6 +77,10 @@
     #itemsTable tbody tr:nth-child(even) {
       background-color: #f2f2f2;
     }
+    /* Bold line when reset */
+    .reset-top td {
+      border-top: 3px solid #000 !important;
+    }
     /* Row highlights */
     .pair1-highlight { background-color: #d6eaff !important; }
     .pair2-highlight { background-color: #d6ffd6 !important; }
@@ -131,8 +135,8 @@
           return res.text();
         })
         .then(text => {
-          const names = text.trim().split("\n").filter(n => n.trim() !== "");
-          buildTable(names);
+          const lines = text.split("\n");
+          buildTable(lines);
         })
         .catch(err => {
           console.error("Error loading names from API:", err);
@@ -140,66 +144,82 @@
         });
     });
 
-    function buildTable(source) {
+    function buildTable(lines) {
       const tableBody = document.querySelector("#itemsTable tbody");
-      source.forEach(name => {
-        if (name.trim() !== "") {
-          const row = document.createElement("tr");
+      let counter = 0;
 
-          // First ✓
-          const tickCell = document.createElement("td");
-          const rowCheckbox = document.createElement("input");
-          rowCheckbox.type = "checkbox";
-          rowCheckbox.addEventListener("change", () => toggleRowGray(row, rowCheckbox));
-          tickCell.appendChild(rowCheckbox);
-          row.appendChild(tickCell);
+      lines.forEach(line => {
+        const name = line.trim();
 
-          // I/C
-          const icCell = document.createElement("td");
-          const icCheckbox = document.createElement("input");
-          icCheckbox.type = "checkbox";
-          icCheckbox.addEventListener("change", () => applyRowHighlight(row));
-          icCell.appendChild(icCheckbox);
-          row.appendChild(icCell);
-
-          // 2nd
-          const secondCell = document.createElement("td");
-          const secondCheckbox = document.createElement("input");
-          secondCheckbox.type = "checkbox";
-          secondCheckbox.addEventListener("change", () => applyRowHighlight(row));
-          secondCell.appendChild(secondCheckbox);
-          row.appendChild(secondCell);
-
-          // Name
-          const nameCell = document.createElement("td");
-          nameCell.classList.add("name-cell");
-
-          const parts = name.trim().split(/\s+/);
-          if (parts.length > 0) {
-            const strong = document.createElement("strong");
-            strong.textContent = parts[0];
-            nameCell.appendChild(strong);
-            if (parts.length > 1) {
-              nameCell.appendChild(document.createTextNode(" " + parts.slice(1).join(" ")));
-            }
-          }
-
-          row.appendChild(nameCell);
-
-          // Other headers
-          headers.forEach(header => {
-            const td = document.createElement("td");
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.addEventListener("change", () => applyRowHighlight(row));
-            if (header === "N") td.classList.add("n-cell");
-            td.appendChild(checkbox);
-            row.appendChild(td);
-          });
-
-          tableBody.appendChild(row);
+        if (name === "") {
+          counter = 0; // reset numbering
+          return; // skip adding row
         }
+
+        counter++;
+        const row = document.createElement("tr");
+
+        // 👉 mark row if it's the first after reset
+        if (counter === 1) {
+          row.classList.add("reset-top");
+        }
+
+        // First ✓
+        const tickCell = document.createElement("td");
+        const rowCheckbox = document.createElement("input");
+        rowCheckbox.type = "checkbox";
+        rowCheckbox.addEventListener("change", () => toggleRowGray(row, rowCheckbox));
+        tickCell.appendChild(rowCheckbox);
+        row.appendChild(tickCell);
+
+        // I/C
+        const icCell = document.createElement("td");
+        const icCheckbox = document.createElement("input");
+        icCheckbox.type = "checkbox";
+        icCheckbox.addEventListener("change", () => applyRowHighlight(row));
+        icCell.appendChild(icCheckbox);
+        row.appendChild(icCell);
+
+        // 2nd
+        const secondCell = document.createElement("td");
+        const secondCheckbox = document.createElement("input");
+        secondCheckbox.type = "checkbox";
+        secondCheckbox.addEventListener("change", () => applyRowHighlight(row));
+        secondCell.appendChild(secondCheckbox);
+        row.appendChild(secondCell);
+
+        // Name
+        const nameCell = document.createElement("td");
+        nameCell.classList.add("name-cell");
+
+        nameCell.appendChild(document.createTextNode(counter + ". "));
+
+        const parts = name.split(/\s+/);
+        if (parts.length > 0) {
+          const strong = document.createElement("strong");
+          strong.textContent = parts[0];
+          nameCell.appendChild(strong);
+          if (parts.length > 1) {
+            nameCell.appendChild(document.createTextNode(" " + parts.slice(1).join(" ")));
+          }
+        }
+
+        row.appendChild(nameCell);
+
+        // Other headers
+        headers.forEach(header => {
+          const td = document.createElement("td");
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.addEventListener("change", () => applyRowHighlight(row));
+          if (header === "N") td.classList.add("n-cell");
+          td.appendChild(checkbox);
+          row.appendChild(td);
+        });
+
+        tableBody.appendChild(row);
       });
+
       updateItemCount();
     }
 
