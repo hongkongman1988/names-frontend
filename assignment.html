@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simplest Table (with API + Zebra Striping)</title>
+  <title>Duty assignment</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -20,8 +20,8 @@
     .controls button {
       flex: 1;
       min-width: 80px;
-      padding: 5px;
-      font-size: 11px;
+      padding: 8px 10px;
+      font-size: 14px;
       border: none;
       border-radius: 3px;
       color: white;
@@ -37,18 +37,17 @@
       width: 100%;
       border-collapse: collapse;
       background: #fff;
-      font-size: 12px;
       margin-top: 10px;
     }
     th, td {
       border: 1px solid #ccc;
-      padding: 3px;
+      padding: 8px;          /* larger padding */
       text-align: center;
+      font-size: 14px;       /* bigger font */
     }
     th {
       background: #007bff;
       color: white;
-      font-size: 12px;
       position: sticky;
       top: 0;
       z-index: 2;
@@ -60,15 +59,16 @@
     td.n-cell {
       border-right: 3px solid #000;
     }
+    /* Bigger checkboxes */
     input[type="checkbox"] {
-      width: 14px;
-      height: 14px;
+      width: 18px;
+      height: 18px;
     }
     #itemCount {
       margin-top: 6px;
       font-weight: bold;
       text-align: right;
-      font-size: 12px;
+      font-size: 13px;
     }
     /* Zebra stripes */
     #itemsTable tbody tr:nth-child(odd) {
@@ -173,7 +173,17 @@
           // Name
           const nameCell = document.createElement("td");
           nameCell.classList.add("name-cell");
-          nameCell.textContent = name.trim();
+
+          const parts = name.trim().split(/\s+/);
+          if (parts.length > 0) {
+            const strong = document.createElement("strong");
+            strong.textContent = parts[0];
+            nameCell.appendChild(strong);
+            if (parts.length > 1) {
+              nameCell.appendChild(document.createTextNode(" " + parts.slice(1).join(" ")));
+            }
+          }
+
           row.appendChild(nameCell);
 
           // Other headers
@@ -257,6 +267,24 @@
       });
       showAll();
     }
+
+    // 🚫 Block refresh (F5, Ctrl+R, Cmd+R)
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "F5") {
+        event.preventDefault();
+        alert("Refresh is disabled on this page.");
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "r") {
+        event.preventDefault();
+        alert("Refresh is disabled on this page.");
+      }
+    });
+
+    // 🚫 Warn before closing or navigating away
+    window.addEventListener("beforeunload", function (e) {
+      e.preventDefault();
+      e.returnValue = ""; // Standard show confirm dialog
+    });
   </script>
 </body>
 </html>
