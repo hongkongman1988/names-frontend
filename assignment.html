@@ -30,6 +30,7 @@
     .btn-ticked { background:#28a745; }
     .btn-unticked { background:#ffc107; color:black; }
     .btn-all { background:#6c757d; }
+    .btn-undo { background:#17a2b8; }
     .btn-clear { background:#dc3545; }
     .btn-home { background:#6c757d; }
 
@@ -64,36 +65,26 @@
       width: 14px;
       height: 14px;
     }
-    #itemCount {
+    #itemCount, #undoStatus {
       margin-top: 6px;
-      font-weight: bold;
-      text-align: right;
       font-size: 12px;
+      text-align: right;
     }
-    /* Zebra stripes */
-    #itemsTable tbody tr:nth-child(odd) {
-      background-color: #ffffff;
+    #undoStatus {
+      color: #555;
+      font-style: italic;
+      font-size: 11px;
     }
-    #itemsTable tbody tr:nth-child(even) {
-      background-color: #f2f2f2;
-    }
-    /* Bold line when reset */
-    .reset-top td {
-      border-top: 3px solid #000 !important;
-    }
-    /* Row highlights */
+
+    .reset-top td { border-top: 3px solid #000 !important; }
     .pair1-highlight { background-color: #d6eaff !important; }
     .pair2-highlight { background-color: #d6ffd6 !important; }
     .pair3-highlight { background-color: #ffe6e6 !important; }
     .row-gray { background-color: #e0e0e0 !important; text-decoration: line-through; color: #555; }
-    /* Name highlights */
     .ic-highlight { background-color: #ff8c00 !important; color:white; }
     .second-highlight { background-color: #ffd699 !important; }
     .both-highlight { background-color: #ffb84d !important; }
-    /* Underline staff name if any checkbox ticked */
-    .underline-name td.name-cell {
-      text-decoration: underline;
-    }
+    .underline-name td.name-cell { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -102,6 +93,7 @@
     <button class="btn-ticked" onclick="filterTicked()">Show Ticked</button>
     <button class="btn-unticked" onclick="filterUnticked()">Show Unticked</button>
     <button class="btn-all" onclick="showAll()">Show All</button>
+    <button class="btn-undo" onclick="undoLast()">Undo Last</button>
     <button class="btn-clear" onclick="untickAll()">Untick All</button>
     <button class="btn-home" onclick="window.location.href='index.html'">Back to Home</button>
   </div>
@@ -127,149 +119,162 @@
   </table>
 
   <div id="itemCount">Total Staff: 0</div>
+  <div id="undoStatus"></div>
 
   <script>
     const headers = ["PO", "PA", "A", "N", "@", "#", "%", "2in1"];
     const API_URL = "https://names-backend-production.up.railway.app/names";
+    const undoStack = [];
 
     window.addEventListener("DOMContentLoaded", () => {
       fetch(API_URL)
-        .then(res => {
-          if (!res.ok) throw new Error("API error");
-          return res.text();
-        })
-        .then(text => {
-          const lines = text.split("\n");
-          buildTable(lines);
-        })
-        .catch(err => {
-          console.error("Error loading names from API:", err);
-          alert("Could not load names from backend API.");
-        });
+        .then(res => res.ok ? res.text() : Promise.reject())
+        .then(text => buildTable(text.split("\n")))
+        .catch(() => alert("Could not load names."));
     });
 
     function buildTable(lines) {
-      const tableBody = document.querySelector("#itemsTable tbody");
+      const tbody = document.querySelector("#itemsTable tbody");
       let counter = 0;
-
       lines.forEach(line => {
         const name = line.trim();
-
-        if (name === "") {
-          counter = 0;
-          return;
-        }
-
+        if (name === "") { counter = 0; return; }
         counter++;
         const row = document.createElement("tr");
         if (counter === 1) row.classList.add("reset-top");
 
-        // First ✓
-        const tickCell = document.createElement("td");
-        const rowCheckbox = document.createElement("input");
-        rowCheckbox.type = "checkbox";
-        rowCheckbox.addEventListener("change", () => {
-          toggleRowGray(row, rowCheckbox);
-          updateTickedCount();
-          updateRowUnderline(row);
-        });
-        tickCell.appendChild(rowCheckbox);
-        row.appendChild(tickCell);
+        // ✓ main
+        const td1 = document.createElement("td");
+        td1.appendChild(makeCheckbox(row));
+        row.appendChild(td1);
 
         // I/C
-        const icCell = document.createElement("td");
-        const icCheckbox = document.createElement("input");
-        icCheckbox.type = "checkbox";
-        icCheckbox.addEventListener("change", () => {
-          applyRowHighlight(row);
-          updateTickedCount();
-          updateRowUnderline(row);
-        });
-        icCell.appendChild(icCheckbox);
-        row.appendChild(icCell);
+        const td2 = document.createElement("td");
+        td2.appendChild(makeCheckbox(row));
+        row.appendChild(td2);
 
         // 2nd
-        const secondCell = document.createElement("td");
-        const secondCheckbox = document.createElement("input");
-        secondCheckbox.type = "checkbox";
-        secondCheckbox.addEventListener("change", () => {
-          applyRowHighlight(row);
-          updateTickedCount();
-          updateRowUnderline(row);
-        });
-        secondCell.appendChild(secondCheckbox);
-        row.appendChild(secondCell);
+        const td3 = document.createElement("td");
+        td3.appendChild(makeCheckbox(row));
+        row.appendChild(td3);
 
         // Name
         const nameCell = document.createElement("td");
         nameCell.classList.add("name-cell");
-
         nameCell.appendChild(document.createTextNode(counter + ". "));
-
         const parts = name.split(/\s+/);
-        if (parts.length > 0) {
-          const strong = document.createElement("strong");
-          strong.textContent = parts[0];
-          nameCell.appendChild(strong);
-          if (parts.length > 1) {
-            nameCell.appendChild(document.createTextNode(" " + parts.slice(1).join(" ")));
-          }
-        }
-
+        const bold = document.createElement("strong");
+        bold.textContent = parts[0];
+        nameCell.appendChild(bold);
+        if (parts.length > 1) nameCell.appendChild(document.createTextNode(" " + parts.slice(1).join(" ")));
         row.appendChild(nameCell);
 
-        // Other headers
-        headers.forEach(header => {
+        // Remaining columns
+        headers.forEach(h => {
           const td = document.createElement("td");
-          const checkbox = document.createElement("input");
-          checkbox.type = "checkbox";
-          checkbox.addEventListener("change", () => {
-            applyRowHighlight(row);
-            updateTickedCount();
-            updateRowUnderline(row);
-          });
-          if (header === "N") td.classList.add("n-cell");
-          td.appendChild(checkbox);
+          if (h === "N") td.classList.add("n-cell");
+          td.appendChild(makeCheckbox(row));
           row.appendChild(td);
         });
 
-        tableBody.appendChild(row);
+        tbody.appendChild(row);
       });
-
       updateItemCount();
       updateTickedCount();
     }
 
+    function makeCheckbox(row) {
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.addEventListener("change", () => {
+        recordAction(cb, !cb.checked);
+        updateVisuals(row);
+        autoHideAboveUnchecked(row);
+      });
+      return cb;
+    }
+
+    function recordAction(checkbox, previousValue) {
+      undoStack.push({ checkbox, previousValue });
+      document.getElementById("undoStatus").textContent = "Last action saved.";
+    }
+
+    // 🆕 Undo + smart reveal
+    function undoLast() {
+      if (!undoStack.length) {
+        document.getElementById("undoStatus").textContent = "No actions to undo.";
+        return;
+      }
+      const last = undoStack.pop();
+      const row = last.checkbox.closest("tr");
+      last.checkbox.checked = last.previousValue;
+
+      // Update visuals
+      updateVisuals(row);
+      updateTickedCount();
+
+      // 🆕 Show lines above until previous ticked one
+      revealAboveUntilTicked(row);
+
+      document.getElementById("undoStatus").textContent = "Undo applied and lines revealed.";
+    }
+
+    function updateVisuals(row) {
+      toggleRowGray(row, row.cells[0].querySelector("input"));
+      applyRowHighlight(row);
+      updateRowUnderline(row);
+      updateTickedCount();
+    }
+
     function toggleRowGray(row, cb) {
-      if (cb.checked) row.classList.add("row-gray");
-      else row.classList.remove("row-gray");
+      row.classList.toggle("row-gray", cb.checked);
+    }
+
+    // 🆕 Reveal hidden lines above until encounter ticked one
+    function revealAboveUntilTicked(row) {
+      const allRows = Array.from(document.querySelectorAll("#itemsTable tbody tr"));
+      const currentIndex = allRows.indexOf(row);
+
+      for (let i = currentIndex - 1; i >= 0; i--) {
+        const aboveRow = allRows[i];
+        aboveRow.style.display = ""; // show this line
+        const ticked = Array.from(aboveRow.querySelectorAll("input[type=checkbox]")).some(cb => cb.checked);
+        if (ticked) break; // stop when you reach another ticked line
+      }
+      updateItemCount();
+    }
+
+    function autoHideAboveUnchecked(currentRow) {
+      const allRows = Array.from(document.querySelectorAll("#itemsTable tbody tr"));
+      const index = allRows.indexOf(currentRow);
+      for (let i = 0; i < index; i++) {
+        const row = allRows[i];
+        const anyChecked = Array.from(row.querySelectorAll("input[type=checkbox]")).some(cb => cb.checked);
+        if (!anyChecked) row.style.display = "none";
+      }
+      updateItemCount();
     }
 
     function updateItemCount() {
       const visibleRows = Array.from(document.querySelectorAll("#itemsTable tbody tr"))
-        .filter(row => row.style.display !== "none");
+        .filter(r => r.style.display !== "none");
       document.getElementById("itemCount").textContent = "Total Staff: " + visibleRows.length;
     }
 
     function updateTickedCount() {
       const rows = document.querySelectorAll("#itemsTable tbody tr");
       let count = 0;
-      rows.forEach(row => {
-        const anyTicked = Array.from(row.querySelectorAll("input[type=checkbox]"))
-          .some(cb => cb.checked);
-        if (anyTicked) count++;
+      rows.forEach(r => {
+        const ticked = Array.from(r.querySelectorAll("input[type=checkbox]")).some(cb => cb.checked);
+        if (ticked) count++;
       });
-      document.getElementById("tickedCount").textContent = "(" + count + ")";
+      document.getElementById("tickedCount").textContent = `(${count})`;
+      updateItemCount();
     }
 
     function updateRowUnderline(row) {
-      const anyTicked = Array.from(row.querySelectorAll("input[type=checkbox]"))
-        .some(cb => cb.checked);
-      if (anyTicked) {
-        row.classList.add("underline-name");
-      } else {
-        row.classList.remove("underline-name");
-      }
+      const ticked = Array.from(row.querySelectorAll("input[type=checkbox]")).some(cb => cb.checked);
+      row.classList.toggle("underline-name", ticked);
     }
 
     function applyRowHighlight(row) {
@@ -283,51 +288,50 @@
       const pair2 = row.cells[9].querySelector("input");
       const pair3 = row.cells[10].querySelector("input");
 
-      if (ic && ic.checked && second && second.checked) {
-        nameCell.classList.add("both-highlight");
-      } else if (ic && ic.checked) {
-        nameCell.classList.add("ic-highlight");
-      } else if (second && second.checked) {
-        nameCell.classList.add("second-highlight");
-      }
+      if (ic && ic.checked && second && second.checked) nameCell.classList.add("both-highlight");
+      else if (ic && ic.checked) nameCell.classList.add("ic-highlight");
+      else if (second && second.checked) nameCell.classList.add("second-highlight");
 
       if (pair3 && pair3.checked) row.classList.add("pair3-highlight");
       else if (pair2 && pair2.checked) row.classList.add("pair2-highlight");
       else if (pair1 && pair1.checked) row.classList.add("pair1-highlight");
     }
 
+    // Filters
     function filterTicked() {
-      document.querySelectorAll("#itemsTable tbody tr").forEach(row => {
-        const anyTicked = Array.from(row.querySelectorAll("input[type=checkbox]")).some(cb => cb.checked);
-        row.style.display = anyTicked ? "" : "none";
+      document.querySelectorAll("#itemsTable tbody tr").forEach(r => {
+        const ticked = Array.from(r.querySelectorAll("input[type=checkbox]")).some(cb => cb.checked);
+        r.style.display = ticked ? "" : "none";
       });
       updateItemCount();
       updateTickedCount();
     }
 
     function filterUnticked() {
-      document.querySelectorAll("#itemsTable tbody tr").forEach(row => {
-        const anyTicked = Array.from(row.querySelectorAll("input[type=checkbox]")).some(cb => cb.checked);
-        row.style.display = anyTicked ? "none" : "";
+      document.querySelectorAll("#itemsTable tbody tr").forEach(r => {
+        const ticked = Array.from(r.querySelectorAll("input[type=checkbox]")).some(cb => cb.checked);
+        r.style.display = ticked ? "none" : "";
       });
       updateItemCount();
       updateTickedCount();
     }
 
     function showAll() {
-      document.querySelectorAll("#itemsTable tbody tr").forEach(row => row.style.display = "");
+      document.querySelectorAll("#itemsTable tbody tr").forEach(r => (r.style.display = ""));
       updateItemCount();
       updateTickedCount();
     }
 
     function untickAll() {
-      document.querySelectorAll("#itemsTable tbody input[type=checkbox]").forEach(chk => chk.checked = false);
-      document.querySelectorAll("#itemsTable tbody tr").forEach(row => {
-        row.classList.remove("pair1-highlight", "pair2-highlight", "pair3-highlight", "row-gray", "underline-name");
-        row.cells[3].classList.remove("ic-highlight", "second-highlight", "both-highlight");
+      document.querySelectorAll("#itemsTable tbody input[type=checkbox]").forEach(cb => (cb.checked = false));
+      document.querySelectorAll("#itemsTable tbody tr").forEach(r => {
+        r.classList.remove("pair1-highlight","pair2-highlight","pair3-highlight","row-gray","underline-name");
+        r.cells[3].classList.remove("ic-highlight","second-highlight","both-highlight");
+        r.style.display = "";
       });
-      showAll();
+      undoStack.length = 0;
       updateTickedCount();
+      document.getElementById("undoStatus").textContent = "Reset complete.";
     }
   </script>
 </body>
